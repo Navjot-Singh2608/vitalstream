@@ -1,6 +1,6 @@
 # VitalStream Pulse
 
-**Event-driven patient monitoring demo (work in progress): Kafka + FastAPI (async) backend, WebSocket gateway, React + TypeScript dashboard.**
+**Event-driven patient monitoring demo: Kafka + FastAPI (async) backend, WebSocket gateway, React + TypeScript dashboard.**
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white)
