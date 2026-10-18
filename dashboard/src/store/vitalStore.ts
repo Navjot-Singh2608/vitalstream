@@ -26,7 +26,7 @@ export interface AlertState extends AlertEvent {
 
 export interface DashboardState {
   connection: ConnectionStatus;
-  sourceKind: 'mock' | 'live';
+  sourceKind: 'live';
   sourceLabel: string;
   patients: Record<string, PatientState>;
   order: string[];
@@ -48,7 +48,7 @@ type Listener = () => void;
 class VitalStore {
   private state: DashboardState = {
     connection: 'connecting',
-    sourceKind: 'mock',
+    sourceKind: 'live',
     sourceLabel: '',
     patients: {},
     order: [],

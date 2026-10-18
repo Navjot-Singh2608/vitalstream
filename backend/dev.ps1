@@ -6,11 +6,13 @@
 # What it does:
 #   1. Creates the Python environment (.venv) the first time and installs libraries
 #   2. Starts Kafka + Kafka UI in Docker, and WAITS until Kafka is ready
-#   3. Runs both services in THIS window, each with --reload (save a file -> it restarts itself):
-#        patient-service  on port 8001
-#        stream-gateway   on port 8000
+#   3. Runs everything in THIS window:
+#        patient-service   on port 8001  (--reload: save -> it restarts itself)
+#        stream-gateway    on port 8000  (--reload)
+#        risk-scorer       plain script  (no auto-reload: restart dev.ps1 after editing)
+#        vitals-simulator  plain script  (no auto-reload: restart dev.ps1 after editing)
 #
-# To stop: press Ctrl+C once (stops both services).
+# To stop: press Ctrl+C once (stops all of them).
 # Kafka keeps running in the background until you run:  docker compose down
 
 $ErrorActionPreference = "Continue"
@@ -59,9 +61,17 @@ function Start-InThisWindow([string]$folder, [int]$port) {
     return $p
 }
 
+function Start-ScriptInThisWindow([string]$script) {
+    $p = Start-Process -FilePath $py -WorkingDirectory $root -NoNewWindow -PassThru -ArgumentList $script
+    Write-Host "Started $script"
+    return $p
+}
+
 $services = @(
     (Start-InThisWindow "patient-service" 8001),
-    (Start-InThisWindow "stream-gateway"  8000)
+    (Start-InThisWindow "stream-gateway"  8000),
+    (Start-ScriptInThisWindow "risk-scorer\main.py"),       # reads vitals.raw, writes vitals.enriched
+    (Start-ScriptInThisWindow "vitals-simulator\main.py")   # last: everyone is already listening
 )
 
 Write-Host ""
@@ -71,7 +81,7 @@ Write-Host "Kafka UI:         http://localhost:8080"
 Write-Host "Dashboard:        run 'npm run dev' in the dashboard folder, then open http://localhost:5173"
 Write-Host ""
 Write-Host "Both services print their messages here. Save any main.py and that service reloads by itself."
-Write-Host "Press Ctrl+C to stop both services." -ForegroundColor Yellow
+Write-Host "Press Ctrl+C to stop everything." -ForegroundColor Yellow
 Write-Host ""
 
 try {

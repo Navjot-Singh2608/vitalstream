@@ -92,6 +92,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .ptable .pname { font-weight: 600; }
 .ptable .abn { color: var(--serious); font-weight: 600; }
 .ptable .strong { font-weight: 700; }
+.pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 10px 2px; border-top: 1px solid var(--border); font-size: 12px; }
+.pager-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
+.pager button { min-width: 32px; height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-secondary); }
+.pager button:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text-primary); }
+.pager button.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text-primary); font-weight: 600; }
+.pager button:disabled { opacity: 0.4; cursor: default; }
 .abn-mark { font-size: 9px; margin-left: 3px; vertical-align: 2px; }
 
 .foot { color: var(--text-muted); font-size: 11px; text-align: center; padding-top: 6px; }

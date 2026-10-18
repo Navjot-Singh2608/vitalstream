@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { isAbnormal, RISK_RANK, VITALS } from '../lib/clinical';
 import { useDashboard, type PatientState } from '../store/vitalStore';
 import type { VitalKey } from '../types/contracts';
@@ -7,12 +7,14 @@ import { RiskBadge } from './status';
 type Tab = 'all' | 'risk';
 
 const VITAL_COLUMNS: VitalKey[] = ['hr', 'spo2', 'sbp', 'rr', 'temp'];
+const PAGE_SIZE = 10; // patients per page
 
 /** Every patient in one table. Two tabs: in bed order, or sickest first. */
 export function PatientTable() {
   const patients = useDashboard((s) => s.patients);
   const order = useDashboard((s) => s.order);
   const [tab, setTab] = useState<Tab>('all');
+  const [page, setPage] = useState(1); // which page we're on (1 = first)
 
   const rows = useMemo(() => {
     const list = order.map((id) => patients[id]).filter((p): p is PatientState => !!p);
@@ -20,6 +22,14 @@ export function PatientTable() {
     const score = (p: PatientState) => (p.latest ? RISK_RANK[p.latest.risk] * 100 + p.latest.news2 : -1);
     return [...list].sort((a, b) => score(b) - score(a)); // highest risk first
   }, [patients, order, tab]);
+
+  // ---- Pagination: only show 10 rows at a time ----
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount); // e.g. patients removed: don't stay on an empty page
+  const first = (safePage - 1) * PAGE_SIZE; // index of the first row on this page
+  const pageRows = rows.slice(first, first + PAGE_SIZE);
+
+  useEffect(() => setPage(1), [tab]); // switching tabs goes back to page 1
 
   return (
     <section className="panel" aria-label="Patients">
@@ -52,11 +62,21 @@ export function PatientTable() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((p) => (
+              {pageRows.map((p) => (
                 <PatientRow key={p.info.id} p={p} />
               ))}
             </tbody>
           </table>
+          {pageCount > 1 && (
+            <Pagination
+              page={safePage}
+              pageCount={pageCount}
+              first={first + 1}
+              last={first + pageRows.length}
+              total={rows.length}
+              onChange={setPage}
+            />
+          )}
         </div>
       )}
     </section>
@@ -85,5 +105,37 @@ function PatientRow({ p }: { p: PatientState }) {
       })}
       <td className="num mono strong">{l?.news2 ?? '—'}</td>
     </tr>
+  );
+}
+
+function Pagination(props: {
+  page: number;
+  pageCount: number;
+  first: number;
+  last: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  const { page, pageCount, first, last, total, onChange } = props;
+  const pages = Array.from({ length: pageCount }, (_, i) => i + 1); // [1, 2, 3, ...]
+  return (
+    <nav className="pager" aria-label="Patient pages">
+      <span className="muted">
+        Showing {first}–{last} of {total}
+      </span>
+      <div className="pager-buttons">
+        <button onClick={() => onChange(page - 1)} disabled={page === 1} aria-label="Previous page">
+          ‹ Prev
+        </button>
+        {pages.map((n) => (
+          <button key={n} className={n === page ? 'on' : ''} onClick={() => onChange(n)} aria-current={n === page ? 'page' : undefined}>
+            {n}
+          </button>
+        ))}
+        <button onClick={() => onChange(page + 1)} disabled={page === pageCount} aria-label="Next page">
+          Next ›
+        </button>
+      </div>
+    </nav>
   );
 }

@@ -2,8 +2,8 @@ import type { RiskLevel, VitalKey, VitalsReading } from '../types/contracts';
 
 /**
  * Simplified NEWS2 scoring (no consciousness / supplemental O2 inputs).
- * This mirrors what vitals-processor does server-side; the mock stream uses it
- * so the demo behaves like the real pipeline. Not for clinical use.
+ * The same rules as the risk-scorer service in the backend.
+ * Not for clinical use.
  */
 type Band = [max: number, score: number];
 

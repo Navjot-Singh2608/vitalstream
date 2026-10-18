@@ -10,7 +10,6 @@ const CONN: Record<string, { label: string; tone: string }> = {
 
 export function TopBar() {
   const connection = useDashboard((s) => s.connection);
-  const sourceKind = useDashboard((s) => s.sourceKind);
   const sourceLabel = useDashboard((s) => s.sourceLabel);
   const [now, setNow] = useState(() => new Date());
 
@@ -39,7 +38,7 @@ export function TopBar() {
 
       <div className="topbar-right">
         <span className="pill" title={sourceLabel}>
-          {sourceKind === 'mock' ? 'Simulated stream' : 'Live · FastAPI gateway'}
+          Live · FastAPI gateway
         </span>
         <span className={`pill conn tone-${c.tone}`}>
           <span className={`pulse-dot ${connection === 'open' ? 'on' : ''}`} aria-hidden />

@@ -51,6 +51,8 @@ async def read_patients_from_kafka() -> None:
     consumer = AIOKafkaConsumer(
         TOPIC,
         bootstrap_servers=KAFKA_ADDRESS,
+        group_id="stream-gateway-patients",   # a team name, so Kafka UI lists it under Consumers
+        enable_auto_commit=False,             # never save a bookmark -> always re-read the full list
         auto_offset_reset="earliest",
         metadata_max_age_ms=3000,
     )
@@ -66,13 +68,39 @@ async def read_patients_from_kafka() -> None:
         await consumer.stop()
 
 
+async def read_vitals_from_kafka() -> None:
+    """Every scored reading from Kafka goes straight to every browser."""
+    consumer = AIOKafkaConsumer(
+        "vitals.enriched",
+        bootstrap_servers=KAFKA_ADDRESS,
+        group_id="stream-gateway-vitals",     # a team name, so Kafka UI lists it under Consumers
+        enable_auto_commit=False,             # never save a bookmark (live data only)
+        auto_offset_reset="latest",      # live data: only readings from now on
+        metadata_max_age_ms=3000,
+    )
+    await consumer.start()
+    print("Reading topic 'vitals.enriched' from Kafka...")
+    try:
+        async for msg in consumer:
+            reading = json.loads(msg.value)
+            await send_to_all_browsers({
+                "topic": "vitals.enriched",          # the dashboard knows this name
+                "ts": int(time.time() * 1000),
+                "payload": reading,                  # one patient's scored reading
+            })
+    finally:
+        await consumer.stop()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # start reading Kafka in the background
     task = asyncio.create_task(read_patients_from_kafka())
+    vitals_task = asyncio.create_task(read_vitals_from_kafka())
     yield                                                    # the service runs here
     # stop reading when the service stops
     task.cancel()
+    vitals_task.cancel()
 
 
 app = FastAPI(title="Stream gateway", lifespan=lifespan)

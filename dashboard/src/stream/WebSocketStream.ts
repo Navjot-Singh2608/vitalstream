@@ -1,5 +1,5 @@
-import { isStreamMessage, type ClientCommand } from '../types/contracts';
-import type { StreamHandlers, StreamSource } from './StreamSource';
+import { isStreamMessage, type ClientCommand } from "../types/contracts";
+import type { StreamHandlers, StreamSource } from "./StreamSource";
 
 /**
  * Connects to the FastAPI stream-gateway (`/ws/stream`). The gateway consumes
@@ -7,7 +7,7 @@ import type { StreamHandlers, StreamSource } from './StreamSource';
  * Reconnects with capped exponential backoff.
  */
 export class WebSocketStream implements StreamSource {
-  readonly kind = 'live' as const;
+  readonly kind = "live" as const;
   readonly label: string;
   private ws: WebSocket | null = null;
   private handlers: StreamHandlers | null = null;
@@ -28,15 +28,15 @@ export class WebSocketStream implements StreamSource {
   private open(): void {
     const h = this.handlers;
     if (!h) return;
-    h.onStatus(this.attempt === 0 ? 'connecting' : 'reconnecting');
+    h.onStatus(this.attempt === 0 ? "connecting" : "reconnecting");
     const ws = new WebSocket(this.url);
     this.ws = ws;
 
-    console.info('[stream] connecting to', this.url);
+    console.info("[stream] connecting to", this.url);
     ws.onopen = () => {
       this.attempt = 0;
-      console.info('[stream] connected');
-      h.onStatus('open');
+      console.info("[stream] connected");
+      h.onStatus("open");
     };
     ws.onmessage = (ev: MessageEvent<string>) => {
       try {
@@ -45,7 +45,8 @@ export class WebSocketStream implements StreamSource {
         const items = Array.isArray(data) ? data : [data];
         for (const item of items) {
           if (isStreamMessage(item)) h.onMessage(item);
-          else console.warn('[stream] ignored message with unknown topic', item);
+          else
+            console.warn("[stream] ignored message with unknown topic", item);
         }
       } catch {
         /* ignore malformed frames */
@@ -53,20 +54,23 @@ export class WebSocketStream implements StreamSource {
     };
     ws.onclose = (ev) => {
       this.ws = null;
-      console.warn(`[stream] closed (code ${ev.code}); is stream-gateway running on ${this.url}?`);
+      console.warn(
+        `[stream] closed (code ${ev.code}); is stream-gateway running on ${this.url}?`,
+      );
       if (this.closedByUser) {
-        h.onStatus('closed');
+        h.onStatus("closed");
         return;
       }
       const delay = Math.min(15000, 500 * 2 ** this.attempt++);
-      h.onStatus('reconnecting');
+      h.onStatus("reconnecting");
       this.retryTimer = window.setTimeout(() => this.open(), delay);
     };
     ws.onerror = () => ws.close();
   }
 
   send(cmd: ClientCommand): void {
-    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(cmd));
+    if (this.ws?.readyState === WebSocket.OPEN)
+      this.ws.send(JSON.stringify(cmd));
   }
 
   disconnect(): void {
